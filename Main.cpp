@@ -120,7 +120,7 @@ int main(int argc, char** argv)
     std::cout << "Start up failed. Error code : " << WSAGetLastError();
     exit(EXIT_FAILURE);
   }
-  std::cout << "Initialized" << std::endl;
+  //std::cout << "Initialized" << std::endl;
 
   // Make a socket and an address.
   const auto sock = CreateSocket(IPPROTO_UDP);
@@ -147,6 +147,8 @@ int main(int argc, char** argv)
   Deinit();
 
   std::cout << recvbuf << std::endl;
+
+  std::getchar();
 
   return 0;
 }
