@@ -1,6 +1,19 @@
 #include <WinSock2.h>
 #include <WS2tcpip.h>
-#include <experimental/filesystem>
+#include <cassert>
+#include <iostream>
+
+#define EMTU 1500 // Ethernet MTU size
+#define PORT 8888 // The port on which to listen for incoming data
+
+// Initialize Winsock
+int Init()
+{
+  WSADATA wsa;
+  const auto error = WSAStartup(MAKEWORD(2, 2), &wsa);
+
+  return error;
+}
 
 // Make a socket--a handle (basically a pointer to a block of system-allocated
 // RAM that holds the data.).
@@ -23,14 +36,14 @@ SOCKET CreateSocket(const int protocol)
 
 // Make an address--a data structure that's more than just IP address;
 // Allocate it yourself.
-sockaddr_in* CreateAddress(char* ip, const int port)
+sockaddr_in* CreateAddress(const char* ip, const int port)
 {
   // Allocate memory for the sockaddr in structure.
   const auto addr = new sockaddr_in;
   addr->sin_family = AF_INET;
   // Remember to go from host byte order to network byte order.
   addr->sin_port = htons(port);
-
+ 
   if (ip == nullptr)
   {
     // Bind to all IP addresses local machine may have.
@@ -47,17 +60,17 @@ sockaddr_in* CreateAddress(char* ip, const int port)
   // Caller will be responsible for free().
 }
 
-int Send(const SOCKET sock, char* buf, const int len, sockaddr_in* dest)
+int Send(const SOCKET sock, char const* buf, const int len, sockaddr_in* dest)
 {
-  const auto sentlen = sendto(sock, buf, len, 0, reinterpret_cast<sockaddr*>(dest)
-    , sizeof(sockaddr_in));
+  const auto sendlen = sendto(sock, buf, len, 0,
+    reinterpret_cast<sockaddr*>(dest), sizeof(sockaddr_in));
 
-  if (sentlen == SOCKET_ERROR)
+  if (sendlen == SOCKET_ERROR)
   {
     return -1;
   }
 
-  return sentlen;
+  return sendlen;
 }
 
 int Receive(const SOCKET sock, char* buf, const int maxSize)
@@ -100,7 +113,40 @@ void Deinit()
 }
 
 
-int main()
+int main(int argc, char** argv)
 {
+  if (Init() != 0)
+  {
+    std::cout << "Start up failed. Error code : " << WSAGetLastError();
+    exit(EXIT_FAILURE);
+  }
+  std::cout << "Initialized" << std::endl;
+
+  // Make a socket and an address.
+  const auto sock = CreateSocket(IPPROTO_UDP);
+  const auto addr = CreateAddress("104.131.138.5", PORT);
+
+  //const auto connectResult = Connect(sock, addr);
+  //assert(connectResult == 0);
+
+  // Get the sending buffer.
+  std::string sendbuf = argv[0];
+  const auto pos = sendbuf.find_last_of('\\');
+  sendbuf = sendbuf.substr(pos + 1);
+  const auto csendbuf = sendbuf.c_str();
+
+  // Send data over UDP and listen for a response.
+  const auto sendlen = Send(sock, csendbuf, sendbuf.length(), addr);
+  assert(sendlen >= 0);
+  char recvbuf[EMTU]{};
+  const auto recvlen = Receive(sock, recvbuf, sizeof(recvbuf));
+  assert(recvlen >= 0);
+
+  // Close the socket and shut down Winsock.
+  Close(sock);
+  Deinit();
+
+  std::cout << recvbuf << std::endl;
+
   return 0;
 }
