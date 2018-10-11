@@ -6,7 +6,6 @@
 // RAM that holds the data.).
 SOCKET CreateSocket(const int protocol)
 {
-  auto sock = INVALID_SOCKET;
   // UDP, socket type datagram
   auto type = SOCK_DGRAM;
 
@@ -17,12 +16,12 @@ SOCKET CreateSocket(const int protocol)
   }
 
   // INVALID_SOCKET if fail, in which case call WSAGetLastError()
-  sock = socket(AF_INET, type, protocol);
+  const auto sock = socket(AF_INET, type, protocol);
 
   return sock;
 }
 
-// Make an address--adata structure that's more than just IP address;
+// Make an address--a data structure that's more than just IP address;
 // Allocate it yourself.
 sockaddr_in* CreateAddress(char* ip, const int port)
 {
@@ -77,7 +76,7 @@ int Receive(const SOCKET sock, char* buf, const int maxSize)
 }
 
 // Associates a socket with a remote address.
-int Connect(SOCKET sock, sockaddr_in* addr)
+int Connect(const SOCKET sock, sockaddr_in* addr)
 {
   if (connect(sock, reinterpret_cast<sockaddr*>(addr), sizeof(sockaddr_in))
     == SOCKET_ERROR)
@@ -86,6 +85,18 @@ int Connect(SOCKET sock, sockaddr_in* addr)
   }
 
   return 0;
+}
+
+// Frees up everything assiciated with the socket.
+void Close(const SOCKET sock)
+{
+  closesocket(sock);
+}
+
+// Shuts down everything and unloads the DLL.
+void Deinit()
+{
+  WSACleanup();
 }
 
 
