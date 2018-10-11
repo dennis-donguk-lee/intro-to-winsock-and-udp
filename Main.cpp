@@ -2,6 +2,8 @@
 #include <WS2tcpip.h>
 #include <experimental/filesystem>
 
+// Make a socket--a handle (basically a pointer to a block of system-allocated
+// RAM that holds the data.).
 SOCKET CreateSocket(const int protocol)
 {
   auto sock = INVALID_SOCKET;
@@ -20,6 +22,8 @@ SOCKET CreateSocket(const int protocol)
   return sock;
 }
 
+// Make an address--adata structure that's more than just IP address;
+// Allocate it yourself.
 sockaddr_in* CreateAddress(char* ip, const int port)
 {
   // Allocate memory for the sockaddr in structure.
@@ -46,20 +50,30 @@ sockaddr_in* CreateAddress(char* ip, const int port)
 
 int Send(const SOCKET sock, char* buf, const int len, sockaddr_in* dest)
 {
-  const auto sizeSent = sendto(sock, buf, len, 0, reinterpret_cast<sockaddr*>(dest)
+  const auto sentlen = sendto(sock, buf, len, 0, reinterpret_cast<sockaddr*>(dest)
     , sizeof(sockaddr_in));
 
-  if (sizeSent == SOCKET_ERROR)
+  if (sentlen == SOCKET_ERROR)
   {
     return -1;
   }
 
-  return sizeSent;
+  return sentlen;
 }
 
-int Receive(SOCKET sock, char* buf, int maxSize)
+int Receive(const SOCKET sock, char* buf, const int maxSize)
 {
-  return 0;
+  sockaddr from{};
+  int fromlen = sizeof(sockaddr);
+
+  // Specify a socket, provide a buffer with a maximum size.
+  const auto recvlen = recvfrom(sock, buf, maxSize, 0, &from, &fromlen);
+  if (recvlen == SOCKET_ERROR)
+  {
+    return -1;
+  }
+
+  return recvlen;
 }
 
 
