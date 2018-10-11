@@ -76,6 +76,18 @@ int Receive(const SOCKET sock, char* buf, const int maxSize)
   return recvlen;
 }
 
+// Associates a socket with a remote address.
+int Connect(SOCKET sock, sockaddr_in* addr)
+{
+  if (connect(sock, reinterpret_cast<sockaddr*>(addr), sizeof(sockaddr_in))
+    == SOCKET_ERROR)
+  {
+    return WSAGetLastError();
+  }
+
+  return 0;
+}
+
 
 int main()
 {
