@@ -3,6 +3,8 @@
 #include <cassert>
 #include <iostream>
 
+#pragma comment(lib, "Ws2_32.lib")
+
 #define EMTU 1500 // Ethernet MTU size
 #define PORT 8888 // The port on which to listen for incoming data
 
